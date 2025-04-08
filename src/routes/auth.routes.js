@@ -12,13 +12,14 @@ import {
 } from "../controllers/auth.controller.js";
 import { userRegistrationValidator } from "../validators/index.js";
 import { validate } from "../middlewares/validator.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
 router
   .route("/register")
   // .post(userRegistrationValidator(), validate, registerUser);
-  .post(registerUser);
+  .post(upload.single("avatar"), registerUser);
 
 router.route("/login").post(loginUser);
 router.route("/logout").get(logOutUser);
