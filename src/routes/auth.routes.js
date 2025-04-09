@@ -8,11 +8,13 @@ import {
   refreshAccessToken,
   registerUser,
   resendVerificationEmail,
+  resetPassword,
   verifyEmail,
 } from "../controllers/auth.controller.js";
 import { userRegistrationValidator } from "../validators/index.js";
 import { validate } from "../middlewares/validator.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJwt } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -22,12 +24,13 @@ router
   .post(upload.single("avatar"), registerUser);
 
 router.route("/login").post(loginUser);
-router.route("/logout").get(logOutUser);
+router.route("/logout").get(verifyJwt, logOutUser);
 router.route("/verify/:token").get(verifyEmail);
 router.route("/resend-verify-email").post(resendVerificationEmail);
 router.route("/forgotpassword").post(forgotPasswordRequest);
-router.route("/changepassword").post(changeCurrentPassword);
-router.route("/profile").get(getCurrentUser);
+router.route("/resetpassword/:token").post(resetPassword);
+router.route("/changepassword").post(verifyJwt, changeCurrentPassword);
+router.route("/profile").get(verifyJwt, getCurrentUser);
 router.route("/refresh-accesstoken").post(refreshAccessToken);
 
 export default router;
