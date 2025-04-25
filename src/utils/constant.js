@@ -6,7 +6,7 @@ export const UserRoleEnum = {
   MEMBER: "member",
 };
 
-export const AvilablesUserRoles = Object.values(UserRoleEnum);
+export const AvailableUserRoles = Object.values(UserRoleEnum);
 
 export const TaskStatusEnum = {
   TODO: "todo",
@@ -14,5 +14,5 @@ export const TaskStatusEnum = {
   DONE: "done",
 };
 
-export const AvilablesTaskStatuses = Object.values(TaskStatusEnum)
+export const AvailableTaskStatuses = Object.values(TaskStatusEnum)
 

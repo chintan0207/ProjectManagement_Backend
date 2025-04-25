@@ -9,6 +9,7 @@ import {
 } from "../utils/mail.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 dotenv.config({
   path: "../.env",
@@ -46,21 +47,24 @@ const registerUser = asyncHandler(async (req, res) => {
   if (existUser) {
     return res.status(400).json(new ApiResponse(400, "User already exists"));
   }
-
   const avatarLocalPath = req.file?.path;
+
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required");
   }
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
 
   const user = await User.create({
     username,
     email,
     password,
     fullname,
-    avatar: { localpath: avatarLocalPath },
+    avatar: { localpath: avatarLocalPath, url: avatar?.url },
   });
 
-  const createUser = await User.findById(user._id).select("username email");
+  const createUser = await User.findById(user._id).select(
+    "username email fullname avatar",
+  );
   if (!createUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
@@ -84,7 +88,13 @@ const registerUser = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, createUser, "User registered successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        createUser,
+        "User registered, check your email to verify",
+      ),
+    );
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -97,7 +107,6 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     $or: [{ username }, { email }],
   });
-
   if (!user) {
     throw new ApiError(400, "Invalid user credentials");
   }
