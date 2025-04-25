@@ -56,6 +56,10 @@ const userSchema = new Schema(
     emailVerificationExpiry: {
       type: Date,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
