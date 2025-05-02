@@ -14,9 +14,7 @@ const getProjects = asyncHandler(async (req, res) => {
   const limitNumber = parseInt(limit);
   const skip = (pageNumber - 1) * limitNumber;
 
-  const memberProjects = await ProjectMember.find({ user: userId }).select(
-    "project",
-  );
+  const memberProjects = await ProjectMember.find({ user: userId }).select("project");
 
   const projectsIds = memberProjects.map((ele) => ele.project);
 
@@ -61,9 +59,7 @@ const getProjects = asyncHandler(async (req, res) => {
     throw new ApiError(404, "No projects found");
   }
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, { result: projects, ...paginationData }));
+  res.status(200).json(new ApiResponse(200, { projects, ...paginationData }));
 });
 
 const getProjectById = asyncHandler(async (req, res) => {
@@ -80,9 +76,7 @@ const getProjectById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Project not found");
   }
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, project, "Project get successfully"));
+  res.status(200).json(new ApiResponse(200, project, "Project get successfully"));
 });
 
 const createProject = asyncHandler(async (req, res) => {
@@ -115,15 +109,10 @@ const createProject = asyncHandler(async (req, res) => {
   });
 
   if (!projectMember) {
-    throw new ApiError(
-      400,
-      "Project was created, but failed to assign the creator as a member",
-    );
+    throw new ApiError(400, "Project was created, but failed to assign the creator as a member");
   }
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, newProject, "Project created successfully"));
+  res.status(200).json(new ApiResponse(200, newProject, "Project created successfully"));
 });
 
 const updateProject = asyncHandler(async (req, res) => {
@@ -153,9 +142,7 @@ const updateProject = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Project not found");
   }
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, updatedProject, "Project updated successfully"));
+  res.status(200).json(new ApiResponse(200, updatedProject, "Project updated successfully"));
 });
 
 const deleteProject = asyncHandler(async (req, res) => {
@@ -195,9 +182,7 @@ const addMemberToProject = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Failed to add member to the project");
   }
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, projectMember, "Member added successfully"));
+  res.status(200).json(new ApiResponse(200, projectMember, "Member added successfully"));
 });
 
 const getProjectMembers = asyncHandler(async (req, res) => {
@@ -221,11 +206,7 @@ const getProjectMembers = asyncHandler(async (req, res) => {
     throw new ApiError(400, "This project has no members");
   }
 
-  res
-    .status(200)
-    .json(
-      new ApiResponse(200, projectMembers, "Project-members get successfully"),
-    );
+  res.status(200).json(new ApiResponse(200, projectMembers, "Project-members get successfully"));
 });
 
 const updateMemberRole = asyncHandler(async (req, res) => {
@@ -247,9 +228,7 @@ const updateMemberRole = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Project member not found.");
   }
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, "Member role updated successfully"));
+  res.status(200).json(new ApiResponse(200, "Member role updated successfully"));
 });
 
 const deleteMember = asyncHandler(async (req, res) => {
