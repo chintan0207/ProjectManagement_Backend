@@ -10,18 +10,40 @@ import {
   updateMemberRole,
   updateProject,
 } from "../controllers/project.controller.js";
-import { verifyJwt } from "../middlewares/auth.middleware.js";
+import { validateProjectPermission, verifyJwt } from "../middlewares/auth.middleware.js";
+import { AvailableUserRoles, UserRoleEnum } from "../utils/constant.js";
 
 const router = Router();
 
-router.route("/create").post(verifyJwt, createProject);
-router.route("/").get(verifyJwt, getProjects);
-router.route("/:id").get(verifyJwt, getProjectById);
-router.route("/:id").post(verifyJwt, updateProject);
-router.route("/:id").delete(verifyJwt, deleteProject);
-router.route("/member/add").post(verifyJwt, addMemberToProject);
-router.route("/project-members/:id").get(verifyJwt, getProjectMembers);
-router.route("/member/:id").delete(verifyJwt, deleteMember);
-router.route("/member-role/update/:id").post(verifyJwt, updateMemberRole);
+router.route("/").post(verifyJwt, createProject).get(verifyJwt, getProjects);
+router
+  .route("/:projectId")
+  .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getProjectById)
+  .put(
+    verifyJwt,
+    validateProjectPermission([UserRoleEnum.ADMIN, UserRoleEnum.PROJECT_ADMIN]),
+    updateProject,
+  )
+  .delete(verifyJwt, validateProjectPermission([UserRoleEnum.ADMIN]), deleteProject);
+router
+  .route("/:projectId/member/add")
+  .post(
+    verifyJwt,
+    validateProjectPermission([UserRoleEnum.ADMIN, UserRoleEnum.PROJECT_ADMIN]),
+    addMemberToProject,
+  );
+router
+  .route("/get-members/:projectId")
+  .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getProjectMembers);
+router
+  .route("/member/:projectId")
+  .delete(verifyJwt, validateProjectPermission([UserRoleEnum.ADMIN]), deleteMember);
+router
+  .route("/member-role/:projectId")
+  .put(
+    verifyJwt,
+    validateProjectPermission([UserRoleEnum.ADMIN, UserRoleEnum.PROJECT_ADMIN]),
+    updateMemberRole,
+  );
 
 export default router;

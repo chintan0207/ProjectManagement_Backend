@@ -14,11 +14,7 @@ const router = Router();
 router
   .route("/:projectId")
   .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getNotes)
-  .post(
-    verifyJwt,
-    validateProjectPermission([UserRoleEnum.ADMIN, UserRoleEnum.PROJECT_ADMIN]),
-    createNote,
-  );
+  .post(verifyJwt, validateProjectPermission(AvailableUserRoles), createNote);
 
 router
   .route("/:projectId/n/:noteId")
