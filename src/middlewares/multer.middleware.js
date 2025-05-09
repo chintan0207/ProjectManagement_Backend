@@ -1,4 +1,5 @@
 import multer from "multer";
+import { allowedMimeTypes } from "../utils/constant.js";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {

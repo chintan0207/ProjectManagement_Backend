@@ -1,9 +1,12 @@
 import { Router } from "express";
 import {
+  addAttachments,
   createSubTask,
   createTask,
+  deleteAttachments,
   deleteSubTask,
   deleteTask,
+  getSubTaskById,
   getSubTasks,
   getTaskById,
   getTasks,
@@ -16,6 +19,7 @@ import { uploadTaskAttachments } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
+// Task routes
 router
   .route("/:projectId")
   .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getTasks)
@@ -28,8 +32,9 @@ router
 router
   .route("/:projectId/n/:taskId")
   .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getTaskById)
-  .put(
+  .patch(
     verifyJwt,
+    uploadTaskAttachments,
     validateProjectPermission([UserRoleEnum.ADMIN, UserRoleEnum.PROJECT_ADMIN]),
     updateTask,
   )
@@ -39,15 +44,20 @@ router
     deleteTask,
   );
 
+// Subtask routes
 router
-  .route("/:taskId")
+  .route("/:projectId/task/:taskId")
   .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getSubTasks)
   .post(verifyJwt, validateProjectPermission(AvailableUserRoles), createSubTask);
 
 router
-  .route("/:taskId/sub/:subTaskId")
-  .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getTaskById)
-  .put(verifyJwt, validateProjectPermission(AvailableUserRoles), updateSubTask)
+  .route("/:projectId/task/:taskId/subtask/:subTaskId")
+  .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getSubTaskById)
+  .patch(verifyJwt, validateProjectPermission(AvailableUserRoles), updateSubTask)
   .delete(verifyJwt, validateProjectPermission(AvailableUserRoles), deleteSubTask);
+
+// Additional routes for attachments
+router.post("/:pid/task/:taskId/attachments/add", verifyJwt, addAttachments);
+router.delete("/:pid/attachments/:aid/delete", verifyJwt, deleteAttachments);
 
 export default router;
