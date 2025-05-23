@@ -52,8 +52,7 @@ const emailVerificationMailgenContent = (username, verificationUrl) => {
           link: verificationUrl,
         },
       },
-      outro:
-        "Need help, or have questions? Just reply to this email, we'd love to help.",
+      outro: "Need help, or have questions? Just reply to this email, we'd love to help.",
     },
   };
 };
@@ -71,17 +70,12 @@ const forgotPasswordMailgenContent = (username, passwordResetUrl) => {
           link: passwordResetUrl,
         },
       },
-      outro:
-        "Need help, or have questions? Just reply to this email, we'd love to help.",
+      outro: "Need help, or have questions? Just reply to this email, we'd love to help.",
     },
   };
 };
 
-export {
-  sendMail,
-  emailVerificationMailgenContent,
-  forgotPasswordMailgenContent,
-};
+export { sendMail, emailVerificationMailgenContent, forgotPasswordMailgenContent };
 
 // sendMail({
 //   email: user.email,

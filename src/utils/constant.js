@@ -1,4 +1,4 @@
-export const DB_NAME = "PMS"
+export const DB_NAME = "PMS";
 
 export const UserRoleEnum = {
   ADMIN: "admin",
@@ -14,7 +14,7 @@ export const TaskStatusEnum = {
   DONE: "done",
 };
 
-export const AvailableTaskStatuses = Object.values(TaskStatusEnum)
+export const AvailableTaskStatuses = Object.values(TaskStatusEnum);
 
 export const allowedMimeTypes = [
   "application/pdf",

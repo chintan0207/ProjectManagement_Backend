@@ -70,10 +70,11 @@ export const updateNote = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Note not found");
   }
 
-  const updateNote = await ProjectNote.findByIdAndUpdate(noteId, { content }, { new: true }).populate(
-    "createdBy",
-    " avatar username email fullname",
-  );
+  const updateNote = await ProjectNote.findByIdAndUpdate(
+    noteId,
+    { content },
+    { new: true },
+  ).populate("createdBy", " avatar username email fullname");
 
   return res.status(200).json(new ApiResponse(200, updateNote, "Note updated successfully"));
 });
@@ -84,7 +85,7 @@ export const deleteNote = asyncHandler(async (req, res) => {
   const note = await ProjectNote.findByIdAndDelete(noteId);
 
   if (!note) {
-    throw new ApiError(404,"Note not found");
+    throw new ApiError(404, "Note not found");
   }
 
   return res.status(200).json(new ApiResponse(200, note, "Note deleted successfully"));

@@ -116,7 +116,9 @@ export const getTasks = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, tasks, tasks.length ? "Task fetched Successfully" : "No Task Available"));
+    .json(
+      new ApiResponse(200, tasks, tasks.length ? "Task fetched Successfully" : "No Task Available"),
+    );
 });
 
 export const getTaskById = asyncHandler(async (req, res) => {
@@ -240,7 +242,9 @@ export const updateTask = asyncHandler(async (req, res) => {
     updatePayload.assignedTo = assignedToUser._id;
   }
 
-  const updateTask = await Task.findByIdAndUpdate(taskId, updatePayload, { new: true });
+  const updateTask = await Task.findByIdAndUpdate(taskId, updatePayload, {
+    new: true,
+  });
   if (!updateTask) {
     throw new ApiError("Task not found", 404);
   }
@@ -285,9 +289,9 @@ export const updateSubTask = asyncHandler(async (req, res) => {
     throw new ApiError("At least one field is required to update", 400);
   }
 
-  const updateSubTask = await SubTask.findByIdAndUpdate(subTaskId, updatePayload, { new: true }).select(
-    "title isCompleted updatedAt",
-  );
+  const updateSubTask = await SubTask.findByIdAndUpdate(subTaskId, updatePayload, {
+    new: true,
+  }).select("title isCompleted updatedAt");
 
   if (!updateSubTask) {
     throw new ApiError("Failed to update the subtask", 500);
