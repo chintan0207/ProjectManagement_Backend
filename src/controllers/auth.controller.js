@@ -34,36 +34,52 @@ const generateAccessAndRefreshToken = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password, fullname } = req.body;
+  console.time("registerUserTotal");
   logger.info("Register user request received");
+
+  console.time("validateInput");
+  const { username, email, password, fullname } = req.body;
 
   if (!username || !email || !password || !fullname) {
     logger.warn("Missing required fields in registration");
     throw new ApiError(400, "All fields are required");
   }
+  console.timeEnd("validateInput");
 
+  console.time("checkExistingUser");
   const existUser = await User.findOne({
     $or: [{ username }, { email }],
   });
 
   if (existUser) {
     logger.warn("User already exists with given username or email");
-    throw new ApiError(400, "User already exist");
+    throw new ApiError(200, "User already exist");
   }
-  const avatarLocalPath = req.file?.path;
+  console.timeEnd("checkExistingUser");
 
-  if (!avatarLocalPath) {
-    logger.warn("No avatar file provided");
-    throw new ApiError(400, "Avatar file is required");
+  console.time("avatarUpload");
+  const avatarLocalPath = req.file?.path || null;
+  let avatar = { localpath: "", url: "" };
+
+  if (avatarLocalPath) {
+    const uploaded = await uploadOnCloudinary(avatarLocalPath);
+    if (uploaded?.url) {
+      avatar = {
+        localpath: avatarLocalPath,
+        url: uploaded.url,
+      };
+    }
   }
-  const avatar = await uploadOnCloudinary(avatarLocalPath);
 
+  console.timeEnd("avatarUpload");
+
+  console.time("createUser");
   const user = await User.create({
     username,
     email,
     password,
     fullname,
-    avatar: { localpath: avatarLocalPath, url: avatar?.url },
+    avatar, // always has localpath and url keys
   });
 
   const createUser = await User.findById(user._id).select("username email fullname avatar");
@@ -71,7 +87,9 @@ const registerUser = asyncHandler(async (req, res) => {
     logger.error("Error fetching newly created user");
     throw new ApiError(500, "Something went wrong while registering the user");
   }
+  console.timeEnd("createUser");
 
+  console.time("generateTokenAndSaveUser");
   const { hashedToken } = user.generateTemporaryToken();
   if (!hashedToken) {
     logger.error("Error generating verification token");
@@ -80,7 +98,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
   user.emailVerificationToken = hashedToken;
   await user.save();
+  console.timeEnd("generateTokenAndSaveUser");
 
+  console.time("sendVerificationEmail");
   await sendMail({
     email: user.email,
     subject: "Email Verification",
@@ -89,8 +109,11 @@ const registerUser = asyncHandler(async (req, res) => {
       `${process.env.BASE_URL}/api/v1/auth/verify/${hashedToken}`,
     ),
   });
+  console.timeEnd("sendVerificationEmail");
 
   logger.info(`User registered: ${user._id}`);
+  console.timeEnd("registerUserTotal");
+
   res
     .status(200)
     .json(new ApiResponse(200, createUser, "User registered, check your email to verify"));

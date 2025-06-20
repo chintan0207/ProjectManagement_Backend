@@ -1,5 +1,6 @@
 import multer from "multer";
 import { allowedMimeTypes } from "../utils/constant.js";
+import path from "path";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -7,7 +8,8 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix);
+    const ext = path.extname(file.originalname); // get file extension
+    cb(null, file.fieldname + "-" + uniqueSuffix + ext); // append extension
   },
 });
 
