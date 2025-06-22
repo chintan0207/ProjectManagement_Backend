@@ -106,7 +106,7 @@ const registerUser = asyncHandler(async (req, res) => {
     subject: "Email Verification",
     mailgenContent: emailVerificationMailgenContent(
       user.username,
-      `${process.env.BASE_URL}/api/v1/auth/verify/${hashedToken}`,
+      `${process.env.BASE_URL}/verify/${hashedToken}`,
     ),
   });
   console.timeEnd("sendVerificationEmail");
@@ -144,7 +144,12 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (!user.isEmailVerified) {
     logger.warn("User email not verified");
-    throw new ApiError(400, "Please verify your email");
+    // throw new ApiError(400, "Please verify your email");
+    return res.status(200).json(
+      new ApiResponse(403, null, "Please verify your email", {
+        isEmailVerified: false,
+      }),
+    );
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
@@ -251,7 +256,7 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
     subject: "Email Verification",
     mailgenContent: emailVerificationMailgenContent(
       user.username,
-      `${process.env.BASE_URL}/api/v1/auth/verify/${hashedToken}`,
+      `${process.env.BASE_URL}/verify/${hashedToken}`,
     ),
   });
 

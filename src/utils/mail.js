@@ -5,7 +5,7 @@ const sendMail = async (options) => {
   const mailGenerator = new Mailgen({
     theme: "default",
     product: {
-      name: "Task manager",
+      name: "Project Build",
       link: "https://mailgen.js/",
     },
   });
