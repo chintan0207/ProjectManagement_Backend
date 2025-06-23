@@ -3,12 +3,20 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 const app = express();
 
+const allowedOrigins = ["http://localhost:5173", "https://projectbuild.live"];
+
 app.use(
   cors({
-    origin: process.env.BASE_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
