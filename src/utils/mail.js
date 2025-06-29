@@ -1,6 +1,9 @@
 import Mailgen from "mailgen";
 import nodemailer from "nodemailer";
 
+import dotenv from "dotenv";
+dotenv.config();
+
 const sendMail = async (options) => {
   const mailGenerator = new Mailgen({
     theme: "default",
@@ -14,17 +17,20 @@ const sendMail = async (options) => {
   const emailBody = mailGenerator.generate(options.mailgenContent);
 
   const transporter = nodemailer.createTransport({
-    host: process.env.MAILTRAP_HOST,
-    port: process.env.MAILTRAP_PORT,
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
     secure: false, // true for port 465, false for other ports
     auth: {
-      user: process.env.MAILTRAP_USERNAME,
-      pass: process.env.MAILTRAP_PASSWORD,
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
-
+  console.log(process.env.EMAIL_USER);
+  console.log(process.env.EMAIL_HOST); // should be smtp.gmail.com
+  console.log(process.env.EMAIL_PORT); // should be 587
+  console.log(options);
   const mail = {
-    from: "mail.taskmanager@example.com", // sender address
+    from: "mail.codewithcm@gmail.com", // sender address
     to: options.email, // list of receivers
     subject: options.subject, // Subject line
     text: emailText, // plain text body

@@ -1,41 +1,62 @@
 import { Worker } from "bullmq";
-import Redis from "ioredis";
-import { emailVerificationMailgenContent, sendMail } from "../src/utils/mail.js";
+import { redisConnection } from "../queues/redisConnection.js";
+import { QueueMap } from "../queues/emailQueue.js";
 import logger from "../src/utils/logger.js";
+import {
+  emailVerificationMailgenContent,
+  forgotPasswordMailgenContent,
+  sendMail,
+} from "../src/utils/mail.js";
 
-const connection = new Redis();
-
-const emailWorker = new Worker(
-  "email-queue",
+export const emailWorker = new Worker(
+  QueueMap.EMAIL_QUEUE,
   async (job) => {
-    logger.info(`Email job : ${job}`);
-    const { email, username, verifyUrl } = job.data;
-    logger.info(`Email job started: ${job.id}`);
+    const { type, email, username, verificationLink, resetLink } = job.data;
 
-    // Call your actual sendMail function
-    await sendMail({
-      email,
-      subject: "Email Verification",
-      mailgenContent: emailVerificationMailgenContent(username, verifyUrl),
-    });
+    logger.info(`📧 Processing ${type} email for ${email}`);
 
-    logger.info(`Email job completed: ${job.id}`);
+    try {
+      if (type === "email-verification") {
+
+        await sendMail({
+          email,
+          subject: "Email Verification",
+          mailgenContent: emailVerificationMailgenContent(username, verificationLink),
+        });
+
+        logger.info(`✅ Verification email sent to ${email}`);
+
+      } else if (type === "forgot-password") {
+
+        await sendMail({
+          email,
+          subject: "Forgot Password",
+          mailgenContent: forgotPasswordMailgenContent(username, resetLink),
+        });
+
+        logger.info(`✅ Forgot password email sent to ${email}`);
+        
+      } else {
+        logger.warn(`⚠️ Unknown email type: ${type}`);
+        throw new Error("Unknown email job type");
+      }
+    } catch (error) {
+      logger.error(`❌ Failed to send ${type} email to ${email}: ${error.message}`);
+      throw new Error("Email sending failed");
+    }
   },
-  { connection },
+  { connection: redisConnection },
 );
 
-// Handle errors properly
+// Optional: Worker event logging
+emailWorker.on("completed", (job) => {
+  logger.info(`🎉 Email job ${job.id} completed`);
+});
+
 emailWorker.on("failed", (job, err) => {
-  logger.error(`Email job failed: ${job.id}`, err);
+  logger.error(`💥 Email job ${job.id} failed: ${err.message}`);
 });
 
 emailWorker.on("error", (err) => {
-  logger.error("Worker error:", err);
+  logger.error(`💥 Email worker error: ${err.message}`);
 });
-
-emailWorker.on("completed", (job) => {
-  logger.info(`Email job completed: ${job.id}`);
-});
-
-export default emailWorker;
-  

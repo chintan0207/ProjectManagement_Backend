@@ -2,15 +2,12 @@ import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { asyncHandler } from "../utils/async-handler.js";
-import {
-  emailVerificationMailgenContent,
-  forgotPasswordMailgenContent,
-  sendMail,
-} from "../utils/mail.js";
+import { forgotPasswordMailgenContent, sendMail } from "../utils/mail.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import logger from "../utils/logger.js";
+import { emailQueue } from "../../queues/emailQueue.js";
 
 dotenv.config({
   path: "../.env",
@@ -62,13 +59,12 @@ const registerUser = asyncHandler(async (req, res) => {
   let avatar = { localpath: "", url: "" };
 
   if (avatarLocalPath) {
-    const uploaded = await uploadOnCloudinary(avatarLocalPath);
-    if (uploaded?.url) {
-      avatar = {
-        localpath: avatarLocalPath,
-        url: uploaded.url,
-      };
-    }
+    // const uploaded = await uploadOnCloudinary(avatarLocalPath);
+    // uploaded.url
+    avatar = {
+      localpath: avatarLocalPath,
+      url: "",
+    };
   }
 
   console.timeEnd("avatarUpload");
@@ -101,14 +97,25 @@ const registerUser = asyncHandler(async (req, res) => {
   console.timeEnd("generateTokenAndSaveUser");
 
   console.time("sendVerificationEmail");
-  await sendMail({
-    email: user.email,
-    subject: "Email Verification",
-    mailgenContent: emailVerificationMailgenContent(
-      user.username,
-      `${process.env.BASE_URL}/verify/${hashedToken}`,
-    ),
-  });
+
+  await emailQueue.add(
+    "sendVerificationEmail",
+    {
+      type: "email-verification",
+      email: user.email,
+      username: user.username,
+      subject: "Email Verification",
+      verificationLink: `${process.env.BASE_URL}/verify/${hashedToken}`,
+    },
+    {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 5000,
+      },
+    },
+  );
+
   console.timeEnd("sendVerificationEmail");
 
   logger.info(`User registered: ${user._id}`);
@@ -225,7 +232,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
 const resendVerificationEmail = asyncHandler(async (req, res) => {
   const { email } = req.body;
-
+  console.log(email);
   if (!email) {
     logger.warn("Email is missing in resend verification request");
     throw new ApiError(400, "Email is required");
@@ -251,14 +258,23 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
   user.emailVerificationToken = hashedToken;
   await user.save();
 
-  await sendMail({
-    email: user.email,
-    subject: "Email Verification",
-    mailgenContent: emailVerificationMailgenContent(
-      user.username,
-      `${process.env.BASE_URL}/verify/${hashedToken}`,
-    ),
-  });
+  await emailQueue.add(
+    "sendVerificationEmail",
+    {
+      type: "email-verification",
+      email: user.email,
+      username: user.username,
+      subject: "Email Verification",
+      verificationLink: `${process.env.BASE_URL}/verify/${hashedToken}`,
+    },
+    {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 5000,
+      },
+    },
+  );
 
   logger.info(`Verification email resent to: ${email}`);
   res.status(200).json(new ApiResponse(200, {}, "Email sent successfully"));
@@ -329,14 +345,23 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
   user.forgotPasswordExpiry = new Date(Date.now() + 10 * 60 * 1000);
   await user.save();
 
-  await sendMail({
-    email: user.email,
-    subject: "Forgot Password",
-    mailgenContent: forgotPasswordMailgenContent(
-      user.username,
-      `${process.env.BASE_URL}/api/v1/auth/resetpassword/${hashedToken}`,
-    ),
-  });
+  await emailQueue.add(
+    "sendForgotPasswordEmail",
+    {
+      type: "forgot-password",
+      email: user.email,
+      username: user.username,
+      subject: "Forgot Password",
+      resetLink: `${process.env.BASE_URL}/resetpassword/${hashedToken}`,
+    },
+    {
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 5000,
+      },
+    },
+  );
 
   logger.info(`Forgot password email sent to: ${email}`);
   res.status(200).json(new ApiResponse(200, {}, "Email sent successfully"));
