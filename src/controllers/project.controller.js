@@ -10,13 +10,20 @@ import { UserRoleEnum } from "../utils/constant.js";
 const getProjects = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  const { page = 1, limit = 10 } = req.query;
+  let {
+    page = 1,
+    limit = 10,
+    sortOrder = "desc",
+    sortField = "createdAt",
+    search = "",
+  } = req.query;
+
   const pageNumber = parseInt(page);
   const limitNumber = parseInt(limit);
   const skip = (pageNumber - 1) * limitNumber;
+  const sortDirection = sortOrder === "asc" ? 1 : -1;
 
   const memberProjects = await ProjectMember.find({ user: userId }).select("project");
-
   const projectsIds = memberProjects.map((ele) => ele.project);
 
   const pipeline = [
@@ -25,6 +32,7 @@ const getProjects = asyncHandler(async (req, res) => {
         $or: [{ _id: { $in: projectsIds } }, { createdBy: userId }],
       },
     },
+
     {
       $lookup: {
         from: "users",
@@ -36,6 +44,24 @@ const getProjects = asyncHandler(async (req, res) => {
     {
       $unwind: "$createdBy",
     },
+
+    // Apply search AFTER "createdBy" fields are available
+    ...(search.trim()
+      ? [
+          {
+            $match: {
+              $or: [
+                { name: { $regex: search, $options: "i" } },
+                { description: { $regex: search, $options: "i" } },
+                { "createdBy.username": { $regex: search, $options: "i" } },
+                { "createdBy.fullname": { $regex: search, $options: "i" } },
+                { "createdBy.email": { $regex: search, $options: "i" } },
+              ],
+            },
+          },
+        ]
+      : []),
+
     {
       $lookup: {
         from: "projectmembers",
@@ -44,11 +70,13 @@ const getProjects = asyncHandler(async (req, res) => {
         as: "members",
       },
     },
+
     {
       $addFields: {
         totalMembers: { $size: "$members" },
       },
     },
+
     {
       $project: {
         _id: 1,
@@ -64,7 +92,14 @@ const getProjects = asyncHandler(async (req, res) => {
         updatedAt: 1,
       },
     },
-    { $sort: { createdAt: -1 } },
+
+    {
+      $sort: {
+        [sortField]: sortDirection,
+      },
+    },
+
+    // Pagination and metadata
     {
       $facet: {
         metaData: [
@@ -84,7 +119,17 @@ const getProjects = asyncHandler(async (req, res) => {
     },
   ];
 
-  const resultData = await Project.aggregate(pipeline);
+  const stringSortFields = [
+    "name",
+    "description",
+    "createdBy.username",
+    "createdBy.fullname",
+    "createdBy.email",
+  ];
+
+  const resultData = stringSortFields.includes(sortField)
+    ? await Project.aggregate(pipeline).collation({ locale: "en", strength: 2 })
+    : await Project.aggregate(pipeline);
 
   const { metaData = [], data: projects = [] } = resultData[0] || {};
 
@@ -95,17 +140,13 @@ const getProjects = asyncHandler(async (req, res) => {
     totalPages: 0,
   };
 
-  if (!projects.length) {
-    throw new ApiError(404, "No projects found");
-  }
-
   res
     .status(200)
     .json(
       new ApiResponse(
         200,
         { projects, ...paginationData },
-        projects.length ? "Projects fetched successfully" : "No projects available",
+        projects.length ? "Projects fetched successfully" : "No projects found",
       ),
     );
 });

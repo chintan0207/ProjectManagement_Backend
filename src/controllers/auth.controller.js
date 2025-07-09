@@ -358,7 +358,7 @@ const forgotPasswordRequest = asyncHandler(async (req, res) => {
       attempts: 3,
       backoff: {
         type: "exponential",
-        delay: 5000,
+        delay: 1000, // 1s base delay
       },
     },
   );
