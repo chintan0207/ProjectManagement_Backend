@@ -111,7 +111,7 @@ const registerUser = asyncHandler(async (req, res) => {
       attempts: 3,
       backoff: {
         type: "exponential",
-        delay: 5000,
+        delay: 2000,
       },
     },
   );
@@ -271,7 +271,7 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
       attempts: 3,
       backoff: {
         type: "exponential",
-        delay: 5000,
+        delay: 2000,
       },
     },
   );
