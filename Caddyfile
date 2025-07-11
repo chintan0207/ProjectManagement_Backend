@@ -1,0 +1,4 @@
+:80 {
+  reverse_proxy /api/* backend:8000
+  respond "Caddy is working locally" 200
+}

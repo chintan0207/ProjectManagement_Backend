@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.9"
 
 services:
   backend:
@@ -7,22 +7,37 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    depends_on:
-      - redis
     environment:
       - REDIS_URL=redis://redis:6379
+      - PORT=8000
+    depends_on:
+      - redis
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile.worker
-    depends_on:
-      - redis
     environment:
       - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
 
   redis:
     image: redis:7
     container_name: redis
     ports:
       - "6379:6379"
+
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
