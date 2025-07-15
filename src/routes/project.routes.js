@@ -1,49 +1,39 @@
 import { Router } from "express";
 import {
-  addMemberToProject,
   createProject,
-  deleteMember,
-  deleteProject,
+  getAccessibleProjects,
   getProjectById,
-  getProjectMembers,
-  getProjects,
-  updateMemberRole,
   updateProject,
+  softDeleteProject,
+  restoreDeletedProject,
+  addProjectMember,
+  getProjectMembers,
+  updateProjectMemberRole,
+  removeProjectMember,
+  getProjectsByOrganizationId,
+  getDeletedProjects,
 } from "../controllers/project.controller.js";
-import { validateProjectPermission, verifyJwt } from "../middlewares/auth.middleware.js";
-import { AvailableUserRoles, UserRoleEnum } from "../utils/constant.js";
+
+import { verifyJwt } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.route("/").post(verifyJwt, createProject).get(verifyJwt, getProjects);
+router.use(verifyJwt); // protect all routes
+
+// Core project routes
+router.route("/").post(createProject).get(getAccessibleProjects);
+router.route("/:projectId").get(getProjectById).patch(updateProject).delete(softDeleteProject);
+router.route("/:projectId/restore").post(restoreDeletedProject);
+
+// Project member management
+router.route("/:projectId/members").post(addProjectMember).get(getProjectMembers);
 router
-  .route("/:projectId")
-  .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getProjectById)
-  .put(
-    verifyJwt,
-    validateProjectPermission([UserRoleEnum.ADMIN, UserRoleEnum.PROJECT_ADMIN]),
-    updateProject,
-  )
-  .delete(verifyJwt, validateProjectPermission([UserRoleEnum.ADMIN]), deleteProject);
-router
-  .route("/:projectId/member/add")
-  .post(
-    verifyJwt,
-    validateProjectPermission([UserRoleEnum.ADMIN, UserRoleEnum.PROJECT_ADMIN]),
-    addMemberToProject,
-  );
-router
-  .route("/get-members/:projectId")
-  .get(verifyJwt, validateProjectPermission(AvailableUserRoles), getProjectMembers);
-router
-  .route("/member/:projectId")
-  .delete(verifyJwt, validateProjectPermission([UserRoleEnum.ADMIN]), deleteMember);
-router
-  .route("/member-role/:projectId")
-  .put(
-    verifyJwt,
-    validateProjectPermission([UserRoleEnum.ADMIN, UserRoleEnum.PROJECT_ADMIN]),
-    updateMemberRole,
-  );
+  .route("/:projectId/members/:memberId")
+  .patch(updateProjectMemberRole)
+  .delete(removeProjectMember);
+
+// SuperAdmin-only routes
+router.get("/org/:orgId", getProjectsByOrganizationId);
+router.get("/deleted", getDeletedProjects);
 
 export default router;

@@ -7,7 +7,7 @@ import {
   AvailableOrgRoles,
   GlobalRoleEnum,
   OrgRoleEnum,
-} from "../utils/constant";
+} from "../utils/constant.js";
 
 const userSchema = new Schema(
   {
@@ -46,8 +46,8 @@ const userSchema = new Schema(
 
     globalRole: {
       type: String,
-      enum: GlobalRoleEnum,
-      default: AvailableGlobalRoles.USER,
+      enum: AvailableGlobalRoles,
+      default: GlobalRoleEnum.USER,
     },
 
     organizations: [
@@ -58,8 +58,8 @@ const userSchema = new Schema(
         },
         role: {
           type: String,
-          enum: OrgRoleEnum,
-          default: AvailableOrgRoles.MEMBER,
+          enum: AvailableOrgRoles,
+          default: OrgRoleEnum.MEMBER,
         },
       },
     ],

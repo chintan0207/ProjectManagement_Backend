@@ -1,5 +1,10 @@
 import mongoose, { Schema } from "mongoose";
-import { AvailableTaskStatuses, TaskStatusEnum } from "../utils/constant.js";
+import {
+  AvailableTaskPriorities,
+  AvailableTaskStatuses,
+  TaskPriorityEnum,
+  TaskStatusEnum,
+} from "../utils/constant.js";
 
 const taskSchema = new Schema(
   {
@@ -8,29 +13,35 @@ const taskSchema = new Schema(
       required: true,
       trim: true,
     },
+
     description: {
       type: String,
     },
+
     project: {
       type: Schema.Types.ObjectId,
       ref: "Project",
       required: true,
     },
+
     assignedTo: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+
     assignedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+
     status: {
       type: String,
       enum: AvailableTaskStatuses,
       default: TaskStatusEnum.TODO,
     },
+
     attachments: {
       type: [
         {
@@ -41,8 +52,29 @@ const taskSchema = new Schema(
       ],
       default: [],
     },
+
+    dueDate: {
+      type: Date,
+    },
+
+    priority: {
+      type: String,
+      enum: AvailableTaskPriorities,
+      default: TaskPriorityEnum.MEDIUM,
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    deletedAt: {
+      type: Date,
+    },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  },
 );
 
 export const Task = mongoose.model("Task", taskSchema);

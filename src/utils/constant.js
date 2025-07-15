@@ -1,4 +1,4 @@
-export const DB_NAME = "PMS";
+export const DB_NAME = "NEW_PMS";
 
 export const UserRoleEnum = {
   ADMIN: "admin",
@@ -7,14 +7,6 @@ export const UserRoleEnum = {
 };
 
 export const AvailableUserRoles = Object.values(UserRoleEnum);
-
-export const TaskStatusEnum = {
-  TODO: "todo",
-  IN_PROGRESS: "in_progress",
-  DONE: "done",
-};
-
-export const AvailableTaskStatuses = Object.values(TaskStatusEnum);
 
 export const allowedMimeTypes = [
   "application/pdf",
@@ -40,5 +32,41 @@ export const OrgRoleEnum = {
   VIEWER: "viewer",
 };
 
+export const ProjectRoleEnum = {
+  ADMIN: "projectAdmin",
+  MEMBER: "projectMember",
+  VIEWER: "projectViewer",
+};
+
+export const AvailableProjectRoles = Object.values(ProjectRoleEnum);
 export const AvailableGlobalRoles = Object.values(GlobalRoleEnum);
 export const AvailableOrgRoles = Object.values(OrgRoleEnum);
+
+export const SubscriptionPlanEnum = {
+  FREE: "free",
+  PRO: "pro",
+  ENTERPRISE: "enterprise",
+};
+
+export const SubscriptionStatusEnum = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+};
+
+export const AvailableSubscriptionStatuses = Object.values(SubscriptionStatusEnum);
+export const AvailableSubscriptionPlans = Object.values(SubscriptionPlanEnum);
+
+export const TaskStatusEnum = {
+  TODO: "todo",
+  IN_PROGRESS: "in_progress",
+  DONE: "done",
+};
+
+export const TaskPriorityEnum = {
+  LOW: "low",
+  MEDIUM: "medium",
+  HIGH: "high",
+};
+
+export const AvailableTaskPriorities = Object.values(TaskPriorityEnum);
+export const AvailableTaskStatuses = Object.values(TaskStatusEnum);
