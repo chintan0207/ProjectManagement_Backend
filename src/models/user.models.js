@@ -2,6 +2,12 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import {
+  AvailableGlobalRoles,
+  AvailableOrgRoles,
+  GlobalRoleEnum,
+  OrgRoleEnum,
+} from "../utils/constant";
 
 const userSchema = new Schema(
   {
@@ -22,6 +28,10 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
+    fullname: {
+      type: String,
+      required: true,
+    },
     email: {
       type: String,
       required: true,
@@ -29,26 +39,34 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    fullname: {
+    password: {
       type: String,
       required: true,
     },
-    password: {
+
+    globalRole: {
       type: String,
-      required: [true, "password is required"],
+      enum: GlobalRoleEnum,
+      default: AvailableGlobalRoles.USER,
     },
+
+    organizations: [
+      {
+        organizationId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Organization",
+        },
+        role: {
+          type: String,
+          enum: OrgRoleEnum,
+          default: AvailableOrgRoles.MEMBER,
+        },
+      },
+    ],
+
     isEmailVerified: {
       type: Boolean,
       default: false,
-    },
-    forgotPasswordToken: {
-      type: String,
-    },
-    forgotPasswordExpiry: {
-      type: Date,
-    },
-    refreshToken: {
-      type: String,
     },
     emailVerificationToken: {
       type: String,
@@ -56,14 +74,30 @@ const userSchema = new Schema(
     emailVerificationExpiry: {
       type: Date,
     },
+
+    forgotPasswordToken: {
+      type: String,
+    },
+    forgotPasswordExpiry: {
+      type: Date,
+    },
+
+    refreshToken: {
+      type: String,
+    },
+
     isDeleted: {
       type: Boolean,
       default: false,
+    },
+    deletedAt: {
+      type: Date,
     },
   },
   { timestamps: true },
 );
 
+// Hash password before save
 userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
@@ -71,11 +105,13 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
+// Compare password
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.methods.generateAccessToken = async function () {
+// Generate Access Token
+userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       _id: this._id,
@@ -89,20 +125,24 @@ userSchema.methods.generateAccessToken = async function () {
   );
 };
 
+// Generate Refresh Token
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
       _id: this._id,
     },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY },
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+    },
   );
 };
 
+//  Generate Temporary Token (for email/forgot-password)
 userSchema.methods.generateTemporaryToken = function () {
   const unHashToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(unHashToken).digest("hex");
-  const tokenExpiry = Date.now() + 20 * 60 * 1000; //20min
+  const tokenExpiry = Date.now() + 20 * 60 * 1000; // 20 minutes
 
   return { unHashToken, hashedToken, tokenExpiry };
 };

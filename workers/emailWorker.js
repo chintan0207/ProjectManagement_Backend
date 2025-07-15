@@ -17,7 +17,6 @@ export const emailWorker = new Worker(
 
     try {
       if (type === "email-verification") {
-
         await sendMail({
           email,
           subject: "Email Verification",
@@ -25,9 +24,7 @@ export const emailWorker = new Worker(
         });
 
         logger.info(`✅ Verification email sent to ${email}`);
-
       } else if (type === "forgot-password") {
-
         await sendMail({
           email,
           subject: "Forgot Password",
@@ -35,7 +32,6 @@ export const emailWorker = new Worker(
         });
 
         logger.info(`✅ Forgot password email sent to ${email}`);
-        
       } else {
         logger.warn(`⚠️ Unknown email type: ${type}`);
         throw new Error("Unknown email job type");

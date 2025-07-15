@@ -28,3 +28,17 @@ export const allowedMimeTypes = [
   // ppt
   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ];
+
+export const GlobalRoleEnum = {
+  SUPER_ADMIN: "super_admin",
+  USER: "user",
+};
+
+export const OrgRoleEnum = {
+  ORG_ADMIN: "orgAdmin",
+  MEMBER: "member",
+  VIEWER: "viewer",
+};
+
+export const AvailableGlobalRoles = Object.values(GlobalRoleEnum);
+export const AvailableOrgRoles = Object.values(OrgRoleEnum);
