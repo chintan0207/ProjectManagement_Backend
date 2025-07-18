@@ -18,7 +18,7 @@ import {
 
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { createOrganizationSchema } from "../validators/organization.schema.js";
+import { createOrganizationSchema, inviteUserSchema } from "../validators/organization.schema.js";
 import { validate } from "../middlewares/zodValidator.middleware.js";
 
 const router = Router();
@@ -36,7 +36,7 @@ router
   .delete(softDeleteOrganization);
 router.route("/:orgId/delete").delete(deleteOrganization);
 router.route("/:orgId/restore").patch(restoreOrganization);
-router.route("/:orgId/invite").post(sendOrganizationInvite);
+router.route("/:orgId/invite").post(validate(inviteUserSchema), sendOrganizationInvite);
 router.route("/join/:inviteToken").post(joinOrganizationWithToken);
 router.route("/:orgId/members").get(getOrganizationMembers);
 router

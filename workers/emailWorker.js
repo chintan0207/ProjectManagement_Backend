@@ -5,13 +5,14 @@ import logger from "../src/utils/logger.js";
 import {
   emailVerificationMailgenContent,
   forgotPasswordMailgenContent,
+  organizationInviteMailgenContent,
   sendMail,
 } from "../src/utils/mail.js";
 
 export const emailWorker = new Worker(
   QueueMap.EMAIL_QUEUE,
   async (job) => {
-    const { type, email, username, verificationLink, resetLink } = job.data;
+    const { type, email, username, verificationLink, resetLink, inviteLink, orgName } = job.data;
 
     logger.info(`📧 Processing ${type} email for ${email}`);
 
@@ -32,6 +33,14 @@ export const emailWorker = new Worker(
         });
 
         logger.info(`✅ Forgot password email sent to ${email}`);
+      } else if (type === "organization-invite") {
+        await sendMail({
+          email,
+          subject: "You're invited to join an organization",
+          mailgenContent: organizationInviteMailgenContent(inviteLink, orgName), // Can reuse `verificationLink` as `inviteLink`
+        });
+
+        logger.info(`✅ Organization invite sent to ${email}`);
       } else {
         logger.warn(`⚠️ Unknown email type: ${type}`);
         throw new Error("Unknown email job type");

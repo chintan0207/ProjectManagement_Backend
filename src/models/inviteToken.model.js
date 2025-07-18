@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { OrgRoleEnum } from "../utils/constant";
+import { AvailableOrgRoles, OrgRoleEnum } from "../utils/constant.js";
 
 const inviteTokenSchema = new mongoose.Schema(
   {

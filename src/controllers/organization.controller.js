@@ -1,9 +1,13 @@
+/* eslint-disable no-undef */
 import { asyncHandler } from "../utils/async-handler.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { Organization } from "../models/organization.model.js";
 import { ApiError } from "../utils/api-error.js";
 import { OrgRoleEnum } from "../utils/constant.js";
 import { User } from "../models/user.model.js";
+import { InviteToken } from "../models/inviteToken.model.js";
+import { emailQueue } from "../../queues/emailQueue.js";
+import crypto from "crypto";
 
 export const createOrganization = asyncHandler(async (req, res) => {
   const { name } = req.validatedData;
@@ -361,17 +365,83 @@ export const deleteOrganization = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, {}, "Organization deleted"));
 });
 
-//  Send invite to user by email with role
 export const sendOrganizationInvite = asyncHandler(async (req, res) => {
+  const { orgId } = req.params;
+  const { email, role } = req.body;
+
+  const user = await User.findOne({ email, isDeleted: false });
+  const org = await Organization.findOne({ _id: orgId, isDeleted: false });
+
+  if (user) {
+    if (user.organizations.find((org) => org.organizationId.equals(orgId))) {
+      throw new ApiError(400, "User already in organization");
+    }
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+
+  const inviteToken = await InviteToken.create({
+    email: email.toLowerCase(),
+    role,
+    token,
+    organizationId: orgId,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+  });
+
+  console.log("inviteToken", inviteToken);
+
+  console.log(`${process.env.BASE_URL}/join-org/${token}`);
+  await emailQueue.add("sendOrgInviteEmail", {
+    type: "organization-invite",
+    email,
+    subject: "You're invited to join an organization",
+    inviteLink: `${process.env.BASE_URL}/join-org/${token}`,
+    orgName: org.name,
+  });
+
   res.status(200).json(new ApiResponse(200, {}, "Invite sent"));
 });
 
-// Accept invite and join org using token
 export const joinOrganizationWithToken = asyncHandler(async (req, res) => {
-  res.status(200).json(new ApiResponse(200, {}, "Joined organization"));
+  const { inviteToken } = req.params;
+  const user = req.user;
+
+  if (!inviteToken) {
+    throw new ApiError(400, "Invite token is required");
+  }
+
+  const tokenDoc = await InviteToken.findOne({
+    token: inviteToken,
+    isUsed: false,
+    isDeleted: false,
+    expiresAt: { $gt: new Date() },
+  });
+
+  if (!tokenDoc) {
+    throw new ApiError(400, "Invalid or expired token");
+  }
+
+  try {
+    await User.findByIdAndUpdate(user._id, {
+      $addToSet: {
+        organizations: {
+          organizationId: tokenDoc.organizationId,
+          role: tokenDoc.role,
+        },
+      },
+    });
+
+    tokenDoc.isUsed = true;
+    tokenDoc.usedBy = user._id;
+    await tokenDoc.save();
+
+    res.status(200).json(new ApiResponse(200, {}, "Joined organization successfully"));
+  } catch (error) {
+    console.error("Error joining organization:", error);
+    res.status(500).json(new ApiResponse(500, {}, "Failed to join organization"));
+  }
 });
 
-// List all members in the organization
 export const getOrganizationMembers = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, [], "Organization members"));
 });

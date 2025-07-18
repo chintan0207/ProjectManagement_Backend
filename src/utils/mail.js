@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import Mailgen from "mailgen";
 import nodemailer from "nodemailer";
 
@@ -81,7 +82,30 @@ const forgotPasswordMailgenContent = (username, passwordResetUrl) => {
   };
 };
 
-export { sendMail, emailVerificationMailgenContent, forgotPasswordMailgenContent };
+const organizationInviteMailgenContent = (inviteLink, orgName = "the organization") => {
+  console.log("inviteLink", inviteLink);
+  return {
+    body: {
+      intro: `You have been invited to join "${orgName}".`,
+      action: {
+        instructions: "Click the button below to accept the invitation:",
+        button: {
+          color: "#22BC66",
+          text: "Join Organization",
+          link: inviteLink,
+        },
+      },
+      outro: "If you were not expecting this invitation, you can safely ignore this email.",
+    },
+  };
+};
+
+export {
+  sendMail,
+  emailVerificationMailgenContent,
+  forgotPasswordMailgenContent,
+  organizationInviteMailgenContent,
+};
 
 // sendMail({
 //   email: user.email,
