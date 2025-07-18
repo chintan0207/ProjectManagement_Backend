@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";

@@ -1,6 +1,7 @@
 import multer from "multer";
 import { allowedMimeTypes } from "../utils/constant.js";
 import path from "path";
+import { ApiError } from "../utils/api-error.js";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {

@@ -13,21 +13,28 @@ import {
   removeMemberFromOrganization,
   getOrganizationActivityLogs,
   getOrganizationProjects,
+  deleteOrganization,
 } from "../controllers/organization.controller.js";
 
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { createOrganizationSchema } from "../validators/organization.schema.js";
+import { validate } from "../middlewares/zodValidator.middleware.js";
 
 const router = Router();
 
 router.use(verifyJwt); // protect all routes
 
-router.route("/").post(upload.single("logo"), createOrganization).get(getMyOrganizations);
+router
+  .route("/")
+  .post(upload.single("logo"), validate(createOrganizationSchema), createOrganization)
+  .get(getMyOrganizations);
 router
   .route("/:orgId")
   .get(getOrganizationById)
-  .patch(updateOrganization)
+  .patch(upload.single("logo"), updateOrganization)
   .delete(softDeleteOrganization);
+router.route("/:orgId/delete").delete(deleteOrganization);
 router.route("/:orgId/restore").patch(restoreOrganization);
 router.route("/:orgId/invite").post(sendOrganizationInvite);
 router.route("/join/:inviteToken").post(joinOrganizationWithToken);

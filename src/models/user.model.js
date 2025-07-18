@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";

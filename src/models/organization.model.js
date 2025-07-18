@@ -2,9 +2,10 @@ import mongoose from "mongoose";
 import {
   AvailableSubscriptionPlans,
   AvailableSubscriptionStatuses,
+  OrgRoleEnum,
   SubscriptionPlanEnum,
   SubscriptionStatusEnum,
-} from "../utils/constant";
+} from "../utils/constant.js";
 
 const organizationSchema = new mongoose.Schema(
   {
@@ -37,6 +38,14 @@ const organizationSchema = new mongoose.Schema(
         type: Date,
       },
     },
+
+    previousMembers: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        role: { type: String, enum: OrgRoleEnum },
+      },
+    ],
+
     isActive: {
       type: Boolean,
       default: true,

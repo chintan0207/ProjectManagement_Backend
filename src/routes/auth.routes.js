@@ -11,8 +11,8 @@ import {
   resetPassword,
   verifyEmail,
 } from "../controllers/auth.controller.js";
-import { userLoginValidator, userRegistrationValidator } from "../validators/index.js";
-import { validate } from "../middlewares/validator.middleware.js";
+import { userLoginValidator } from "../validators/index.js";
+import { validate } from "../middlewares/expressValidator.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 

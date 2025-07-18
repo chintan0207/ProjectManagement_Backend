@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { Redis } from "ioredis";
 import { config } from "dotenv";
 import logger from "../src/utils/logger.js";
