@@ -16,8 +16,10 @@ import {
 
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { createOrganizationSchema, inviteUserSchema } from "../validators/organization.schema.js";
+import { createOrganizationSchema, inviteUserSchema } from "../validators/organization.validation.js";
 import { validate } from "../middlewares/zodValidator.middleware.js";
+import { validateOrgPermission } from "../middlewares/permission.middleware.js";
+import { AvailableOrgRoles, OrgRoleEnum } from "../utils/constant.js";
 
 const router = Router();
 
@@ -30,16 +32,20 @@ router
 router
   .route("/:orgId")
   .get(getOrganizationById)
-  .patch(upload.single("logo"), updateOrganization)
-  .delete(softDeleteOrganization);
+  .patch(upload.single("logo"), validateOrgPermission([OrgRoleEnum.ORG_ADMIN]), updateOrganization)
+  .delete(validateOrgPermission([OrgRoleEnum.ORG_ADMIN]), softDeleteOrganization);
+
 router.route("/:orgId/delete").delete(deleteOrganization);
 router.route("/:orgId/restore").patch(restoreOrganization);
 router.route("/:orgId/invite").post(validate(inviteUserSchema), sendOrganizationInvite);
 router.route("/join/:inviteToken").post(joinOrganizationWithToken);
-router.route("/:orgId/members").get(getOrganizationMembers);
+router
+  .route("/:orgId/members")
+  .get(validateOrgPermission(AvailableOrgRoles), getOrganizationMembers);
+
 router
   .route("/:orgId/members/:userId")
-  .patch(updateMemberRole)
-  .delete(removeMemberFromOrganization);
+  .patch(validateOrgPermission([OrgRoleEnum.ORG_ADMIN]), updateMemberRole)
+  .delete(validateOrgPermission([OrgRoleEnum.ORG_ADMIN]), removeMemberFromOrganization);
 
 export default router;
