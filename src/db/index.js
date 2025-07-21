@@ -1,9 +1,9 @@
+/* eslint-disable no-undef */
 import mongoose from "mongoose";
 import { DB_NAME, GlobalRoleEnum } from "../utils/constant.js";
 import logger from "../utils/logger.js";
 import bcrypt from "bcryptjs";
 import { User } from "../models/user.model.js"; // adjust path if needed
-import { AvailableGlobalRoles } from "../utils/constant.js";
 
 const connectDB = async () => {
   try {
@@ -14,7 +14,6 @@ const connectDB = async () => {
     const existingSuperAdmin = await User.findOne({
       globalRole: GlobalRoleEnum.SUPER_ADMIN,
     });
-
 
     if (!existingSuperAdmin) {
       const hashedPassword = await bcrypt.hash("admin123", 10); // Default password

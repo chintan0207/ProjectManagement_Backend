@@ -9,13 +9,8 @@ import {
 
 const organizationSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-    },
-    logo: {
-      type: String,
-    },
+    name: { type: String, required: true },
+    logo: { type: String },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -26,37 +21,23 @@ const organizationSchema = new mongoose.Schema(
         enum: AvailableSubscriptionPlans,
         default: SubscriptionPlanEnum.FREE,
       },
-      stripeCustomerId: {
-        type: String,
-      },
+      stripeCustomerId: String,
       status: {
         type: String,
         enum: AvailableSubscriptionStatuses,
         default: SubscriptionStatusEnum.ACTIVE,
       },
-      trialEndsAt: {
-        type: Date,
-      },
+      trialEndsAt: Date,
     },
-
     previousMembers: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         role: { type: String, enum: OrgRoleEnum },
       },
     ],
-
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
-    deletedAt: {
-      type: Date,
-    },
+    isActive: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: Date,
   },
   { timestamps: true },
 );

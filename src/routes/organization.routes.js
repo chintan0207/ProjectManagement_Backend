@@ -11,8 +11,6 @@ import {
   getOrganizationMembers,
   updateMemberRole,
   removeMemberFromOrganization,
-  getOrganizationActivityLogs,
-  getOrganizationProjects,
   deleteOrganization,
 } from "../controllers/organization.controller.js";
 
@@ -43,7 +41,5 @@ router
   .route("/:orgId/members/:userId")
   .patch(updateMemberRole)
   .delete(removeMemberFromOrganization);
-router.route("/:orgId/activity-logs").get(getOrganizationActivityLogs);
-router.route("/:orgId/projects").get(getOrganizationProjects);
 
 export default router;

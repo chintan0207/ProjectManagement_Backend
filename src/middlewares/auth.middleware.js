@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import jwt from "jsonwebtoken";

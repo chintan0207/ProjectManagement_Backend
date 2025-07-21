@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { AvailableProjectRoles, ProjectRoleEnum } from "../utils/constant";
 
 const projectSchema = new mongoose.Schema(
   {
@@ -8,57 +7,20 @@ const projectSchema = new mongoose.Schema(
       ref: "Organization",
       required: true,
     },
-
-    name: {
-      type: String,
-      required: true,
-    },
-
-    description: {
-      type: String,
-    },
-
+    name: { type: String, required: true },
+    description: String,
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
-    members: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
-        role: {
-          type: String,
-          enum: AvailableProjectRoles,
-          default: ProjectRoleEnum.MEMBER,
-        },
-        addedBy: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        addedAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
-
     isDeleted: {
       type: Boolean,
       default: false,
     },
-
-    deletedAt: {
-      type: Date,
-    },
+    deletedAt: Date,
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
-export default mongoose.model("Project", projectSchema);
+export const Project = mongoose.model("Project", projectSchema);
