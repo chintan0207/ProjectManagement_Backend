@@ -67,7 +67,9 @@ export const validateOrgPermission = (requiredRoles = []) => {
       throw new ApiError(403, " You do not have permission to perform this operation");
     }
 
-    req.user.orgRole = membership;
+    req.user.orgRole = membership.role;
+    req.user.orgId = orgId;
+
     next();
   };
 };

@@ -4,6 +4,7 @@ import {
   AvailableProjectStatuses,
   AvailableProjectVisibilities,
   ProjectPriorityEnum,
+  ProjectRoleEnum,
   ProjectStatusEnum,
   ProjectVisibilityEnum,
 } from "../utils/constant.js";
@@ -64,6 +65,12 @@ const projectSchema = new mongoose.Schema(
       default: ProjectPriorityEnum.MEDIUM,
       index: true,
     },
+    previousMembers: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        role: { type: String, enum: ProjectRoleEnum },
+      },
+    ],
 
     visibility: {
       type: String,

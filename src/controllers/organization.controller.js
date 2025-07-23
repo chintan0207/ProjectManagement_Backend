@@ -62,16 +62,11 @@ export const createOrganization = asyncHandler(async (req, res) => {
 export const getMyOrganizations = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  let {
-    page = 1,
-    limit = 10,
-    sortOrder = "desc",
-    sortField = "createdAt",
-    search = "",
-  } = req.query;
+  let { page, limit, sortOrder = "desc", sortField = "createdAt", search = "" } = req.query;
 
-  const pageNumber = parseInt(page);
-  const limitNumber = parseInt(limit);
+  const usePagination = page !== undefined && limit !== undefined;
+  const pageNumber = usePagination ? parseInt(page) : 1;
+  const limitNumber = usePagination ? parseInt(limit) : 0;
   const skip = (pageNumber - 1) * limitNumber;
   const sortDirection = sortOrder === "asc" ? 1 : -1;
 
@@ -180,7 +175,10 @@ export const getMyOrganizations = asyncHandler(async (req, res) => {
           [sortField]: sortDirection,
         },
       },
-      {
+    ];
+
+    if (usePagination) {
+      pipeline.push({
         $facet: {
           metaData: [
             { $count: "total" },
@@ -196,21 +194,34 @@ export const getMyOrganizations = asyncHandler(async (req, res) => {
           ],
           data: [{ $skip: skip }, { $limit: limitNumber }],
         },
-      },
-    ];
+      });
+    }
 
     const stringSortFields = ["name", "createdBy.fullname", "createdBy.email"];
     const result = stringSortFields.includes(sortField)
       ? await Organization.aggregate(pipeline).collation({ locale: "en", strength: 2 })
       : await Organization.aggregate(pipeline);
 
-    const { metaData = [], data: organizations = [] } = result[0] || {};
-    const paginationData = metaData[0] || {
-      total: 0,
-      page: pageNumber,
-      limit: limitNumber,
-      totalPages: 0,
-    };
+    let organizations, paginationData;
+
+    if (usePagination) {
+      const { metaData = [], data = [] } = result[0] || {};
+      organizations = data;
+      paginationData = metaData[0] || {
+        total: 0,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: 0,
+      };
+    } else {
+      organizations = result;
+      paginationData = {
+        total: organizations.length,
+        page: 1,
+        limit: organizations.length,
+        totalPages: 1,
+      };
+    }
 
     await session.commitTransaction();
 
@@ -660,7 +671,9 @@ export const updateMemberRole = asyncHandler(async (req, res) => {
   member.role = role;
   await member.save();
 
-  res.status(200).json(new ApiResponse(200, { member }, "Member role updated successfully"));
+  res
+    .status(200)
+    .json(new ApiResponse(200, { result: member }, "Member role updated successfully"));
 });
 
 export const removeMemberFromOrganization = asyncHandler(async (req, res) => {

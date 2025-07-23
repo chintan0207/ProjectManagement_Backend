@@ -1,7 +1,6 @@
 import { Router } from "express";
 import {
   createProject,
-  getAccessibleProjects,
   getProjectById,
   updateProject,
   softDeleteProject,
@@ -12,6 +11,7 @@ import {
   removeProjectMember,
   getProjectsByOrganizationId,
   getDeletedProjects,
+  getAllProjects,
 } from "../controllers/project.controller.js";
 
 import { verifyJwt } from "../middlewares/auth.middleware.js";
@@ -20,7 +20,12 @@ import {
   validateOrgPermission,
   validateProjectPermission,
 } from "../middlewares/permission.middleware.js";
-import { AvailableGlobalRoles, AvailableProjectRoles, OrgRoleEnum } from "../utils/constant.js";
+import {
+  AvailableGlobalRoles,
+  AvailableProjectRoles,
+  OrgRoleEnum,
+  ProjectRoleEnum,
+} from "../utils/constant.js";
 import { validate } from "../middlewares/zodValidator.middleware.js";
 import { createProjectSchema } from "../validators/project.validation.js";
 
@@ -37,16 +42,23 @@ router
     validate(createProjectSchema),
     createProject,
   )
-  .get(getAccessibleProjects);
+  .get(validateGlobalPermission(AvailableGlobalRoles), getAllProjects);
 router
   .route("/:projectId")
   .get(validateProjectPermission(AvailableProjectRoles), getProjectById)
-  .patch(updateProject)
-  .delete(softDeleteProject);
+  .patch(validateProjectPermission(AvailableProjectRoles), updateProject)
+  .delete(softDeleteProject, validateProjectPermission(ProjectRoleEnum.ADMIN));
 router.route("/:projectId/restore").post(restoreDeletedProject);
 
 // Project member management
-router.route("/:projectId/members").post(addProjectMember).get(getProjectMembers);
+router
+  .route("/:projectId/members")
+  .post(
+    validateGlobalPermission(AvailableGlobalRoles),
+    validateProjectPermission(ProjectRoleEnum.ADMIN),
+    addProjectMember,
+  )
+  .get(validateProjectPermission(ProjectRoleEnum.ADMIN), getProjectMembers);
 router
   .route("/:projectId/members/:memberId")
   .patch(updateProjectMemberRole)
