@@ -88,187 +88,201 @@ export const createProject = asyncHandler(async (req, res) => {
   }
 });
 
-// export const getAccessibleProjects = asyncHandler(async (req, res) => {
-//   const userId = req.user._id;
+export const getAccessibleProjects = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const globalRole = req.user.globalRole;
 
-//   let { page, limit, sortOrder = "desc", sortField = "createdAt", search = "" } = req.query;
+  let { page, limit, sortOrder = "desc", sortField = "createdAt", search = "" } = req.query;
 
-//   const sortDirection = sortOrder === "asc" ? 1 : -1;
+  const sortDirection = sortOrder === "asc" ? 1 : -1;
+  const usePagination = page !== undefined && limit !== undefined;
+  const pageNumber = usePagination ? parseInt(page) : 1;
+  const limitNumber = usePagination ? parseInt(limit) : 0;
+  const skip = (pageNumber - 1) * limitNumber;
 
-//   const usePagination = page !== undefined && limit !== undefined;
-//   const pageNumber = usePagination ? parseInt(page) : 1;
-//   const limitNumber = usePagination ? parseInt(limit) : 0;
-//   const skip = (pageNumber - 1) * limitNumber;
+  try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-//   try {
-//     const session = await mongoose.startSession();
-//     session.startTransaction();
+    let matchStage = {
+      $match: {
+        isDeleted: false,
+      },
+    };
 
-//     const memberships = await ProjectMember.find({ userId });
-//     const projectIds = memberships.map((m) => m.projectId);
-//     let projectRoleMap = {};
-//     memberships.forEach((m) => {
-//       projectRoleMap[m.projectId.toString()] = m.role;
-//     });
+    let projectRoleMap = {};
+    let projectIds = [];
 
-//     const matchStage = {
-//       $match: {
-//         _id: { $in: projectIds },
-//         isDeleted: false,
-//       },
-//     };
+    // Handle Non-SuperAdmin: get only projects they are member of
+    if (globalRole !== GlobalRoleEnum.SUPER_ADMIN) {
+      const memberships = await ProjectMember.find({ userId });
+      projectIds = memberships.map((m) => m.projectId);
+      projectRoleMap = {};
+      memberships.forEach((m) => {
+        projectRoleMap[m.projectId.toString()] = m.role;
+      });
 
-//     const pipeline = [
-//       matchStage,
-//       {
-//         $lookup: {
-//           from: "users",
-//           localField: "createdBy",
-//           foreignField: "_id",
-//           as: "createdBy",
-//         },
-//       },
-//       {
-//         $unwind: {
-//           path: "$createdBy",
-//           preserveNullAndEmptyArrays: true,
-//         },
-//       },
-//       ...(search.trim()
-//         ? [
-//             {
-//               $match: {
-//                 $or: [
-//                   { name: { $regex: search, $options: "i" } },
-//                   { "createdBy.fullname": { $regex: search, $options: "i" } },
-//                   { "createdBy.email": { $regex: search, $options: "i" } },
-//                 ],
-//               },
-//             },
-//           ]
-//         : []),
-//       {
-//         $addFields: {
-//           userRole: {
-//             $let: {
-//               vars: {
-//                 orgIdStr: { $toString: "$_id" },
-//               },
-//               in: {
-//                 $literal: projectRoleMap,
-//               },
-//             },
-//           },
-//         },
-//       },
-//       {
-//         $addFields: {
-//           userRole: {
-//             $arrayElemAt: [
-//               {
-//                 $objectToArray: "$userRole",
-//               },
-//               {
-//                 $indexOfArray: [
-//                   { $map: { input: projectIds, as: "p", in: { $toString: "$$p" } } },
-//                   { $toString: "$_id" },
-//                 ],
-//               },
-//             ],
-//           },
-//         },
-//       },
-//       {
-//         $project: {
-//           name: 1,
-//           logo: 1,
-//           description: 1,
-//           createdAt: 1,
-//           visibility: 1,
-//           priority: 1,
-//           status: 1,
-//           startDate: 1,
-//           dueDate: 1,
-//           tags: 1,
-//           "createdBy.fullname": 1,
-//           "createdBy.email": 1,
-//           "createdBy.username": 1,
-//           "createdBy.avatar": 1,
-//           userRole: "$userRole.v",
-//         },
-//       },
-//       {
-//         $sort: {
-//           [sortField]: sortDirection,
-//         },
-//       },
-//     ];
+      matchStage.$match._id = { $in: projectIds };
+    }
 
-//     if (usePagination) {
-//       pipeline.push({
-//         $facet: {
-//           metaData: [
-//             { $count: "total" },
-//             {
-//               $addFields: {
-//                 page: pageNumber,
-//                 limit: limitNumber,
-//                 totalPages: {
-//                   $ceil: { $divide: ["$total", limitNumber] },
-//                 },
-//               },
-//             },
-//           ],
-//           data: [{ $skip: skip }, { $limit: limitNumber }],
-//         },
-//       });
-//     }
+    const pipeline = [
+      matchStage,
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy",
+        },
+      },
+      {
+        $unwind: {
+          path: "$createdBy",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      ...(search.trim()
+        ? [
+            {
+              $match: {
+                $or: [
+                  { name: { $regex: search, $options: "i" } },
+                  { "createdBy.fullname": { $regex: search, $options: "i" } },
+                  { "createdBy.email": { $regex: search, $options: "i" } },
+                ],
+              },
+            },
+          ]
+        : []),
+      // Add userRole only for non-super-admins
+      ...(globalRole !== "SUPER_ADMIN"
+        ? [
+            {
+              $addFields: {
+                userRole: {
+                  $let: {
+                    vars: {
+                      orgIdStr: { $toString: "$_id" },
+                    },
+                    in: {
+                      $literal: projectRoleMap,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $addFields: {
+                userRole: {
+                  $arrayElemAt: [
+                    {
+                      $objectToArray: "$userRole",
+                    },
+                    {
+                      $indexOfArray: [
+                        { $map: { input: projectIds, as: "p", in: { $toString: "$$p" } } },
+                        { $toString: "$_id" },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ]
+        : []),
+      {
+        $project: {
+          name: 1,
+          logo: 1,
+          description: 1,
+          createdAt: 1,
+          visibility: 1,
+          priority: 1,
+          status: 1,
+          startDate: 1,
+          dueDate: 1,
+          tags: 1,
+          "createdBy.fullname": 1,
+          "createdBy.email": 1,
+          "createdBy.username": 1,
+          "createdBy.avatar": 1,
+          userRole: globalRole !== "SUPER_ADMIN" ? "$userRole.v" : "$$REMOVE",
+        },
+      },
+      {
+        $sort: {
+          [sortField]: sortDirection,
+        },
+      },
+    ];
 
-//     const stringSortFields = ["name", "createdBy.fullname", "createdBy.email"];
-//     const result = stringSortFields.includes(sortField)
-//       ? await Project.aggregate(pipeline).collation({ locale: "en", strength: 2 })
-//       : await Project.aggregate(pipeline);
+    if (usePagination) {
+      pipeline.push({
+        $facet: {
+          metaData: [
+            { $count: "total" },
+            {
+              $addFields: {
+                page: pageNumber,
+                limit: limitNumber,
+                totalPages: {
+                  $ceil: { $divide: ["$total", limitNumber] },
+                },
+              },
+            },
+          ],
+          data: [{ $skip: skip }, { $limit: limitNumber }],
+        },
+      });
+    }
 
-//     let projects, paginationData;
+    const stringSortFields = ["name", "createdBy.fullname", "createdBy.email"];
+    const result = stringSortFields.includes(sortField)
+      ? await Project.aggregate(pipeline).collation({ locale: "en", strength: 2 })
+      : await Project.aggregate(pipeline);
 
-//     if (usePagination) {
-//       const { metaData = [], data = [] } = result[0] || {};
-//       projects = data;
-//       paginationData = metaData[0] || {
-//         total: 0,
-//         page: pageNumber,
-//         limit: limitNumber,
-//         totalPages: 0,
-//       };
-//     } else {
-//       projects = result;
-//       paginationData = {
-//         total: projects.length,
-//         page: 1,
-//         limit: projects.length,
-//         totalPages: 1,
-//       };
-//     }
+    let projects, paginationData;
 
-//     await session.commitTransaction();
+    if (usePagination) {
+      const { metaData = [], data = [] } = result[0] || {};
+      projects = data;
+      paginationData = metaData[0] || {
+        total: 0,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: 0,
+      };
+    } else {
+      projects = result;
+      paginationData = {
+        total: projects.length,
+        page: 1,
+        limit: projects.length,
+        totalPages: 1,
+      };
+    }
 
-//     res
-//       .status(200)
-//       .json(
-//         new ApiResponse(
-//           200,
-//           { projects, ...paginationData },
-//           projects.length > 0 ? "Projects fetched successfully" : "No projects found",
-//         ),
-//       );
-//   } catch (error) {
-//     console.error("Error fetching accessible projects:", error);
-//     res.status(500).json(new ApiResponse(500, {}, "Failed to fetch accessible projects"));
-//   }
-// });
+    await session.commitTransaction();
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { projects, ...paginationData },
+          projects.length > 0 ? "Projects fetched successfully" : "No projects found",
+        ),
+      );
+  } catch (error) {
+    console.error("Error fetching accessible projects:", error);
+    res.status(500).json(new ApiResponse(500, {}, "Failed to fetch accessible projects"));
+  }
+});
 
 export const getAllProjects = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  console.log("req.user", req.user);
+  console.log(" req.user.orgId", req.user.userId);
   const globalRole = req.user.globalRole;
   const orgRole = req.user?.orgRole;
   const orgId = req.user?.orgId;
@@ -757,10 +771,9 @@ export const removeProjectMember = asyncHandler(async (req, res) => {
 
 export const getProjectsByOrganizationId = asyncHandler(async (req, res) => {
   const { orgId } = req.params;
-
   let { page, limit, sortOrder = "desc", sortField = "createdAt", search = "" } = req.query;
 
-  if (!orgId || mongoose.Types.ObjectId(orgId)) {
+  if (!orgId || !mongoose.Types.ObjectId.isValid(orgId)) {
     throw new ApiError(400, "Valid organization Id required");
   }
 
@@ -778,7 +791,8 @@ export const getProjectsByOrganizationId = asyncHandler(async (req, res) => {
   const pipeline = [
     {
       $match: {
-        organizationId: mongoose.Types.ObjectId(orgId),
+        organizationId: new mongoose.Types.ObjectId(orgId),
+        isDeleted: false,
       },
     },
     {
@@ -851,18 +865,28 @@ export const getProjectsByOrganizationId = asyncHandler(async (req, res) => {
     });
   }
 
-  const stringSortFields = ["name", "createdBy.fullname", "createdBy.email"];
+  const stringSortFields = ["name", "user.fullname", "user.email"];
   const result = stringSortFields.includes(sortField)
     ? await Project.aggregate(pipeline).collation({ locale: "en", strength: 2 })
     : await Project.aggregate(pipeline);
 
-  const { metaData = [], data: projects = [] } = result[0] || {};
-  const pagination = metaData[0] || {
+  let projects = [];
+  let pagination = {
     total: 0,
     page: pageNumber,
     limit: limitNumber,
     totalPages: 0,
   };
+
+  if (usePagination && result.length > 0) {
+    const { metaData = [], data = [] } = result[0];
+    projects = data;
+    if (metaData.length > 0) {
+      pagination = metaData[0];
+    }
+  } else {
+    projects = result;
+  }
 
   res
     .status(200)
@@ -870,10 +894,9 @@ export const getProjectsByOrganizationId = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         { result: projects, ...pagination },
-        projects.length ? "Project members fetched" : "No members found",
+        projects.length ? "Projects fetched" : "No projects found",
       ),
     );
-  res.status(200).json(new ApiResponse(200, [], "Projects under organization fetched"));
 });
 
 export const getDeletedProjects = asyncHandler(async (req, res) => {

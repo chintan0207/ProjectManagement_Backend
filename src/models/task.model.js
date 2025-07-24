@@ -21,19 +21,16 @@ const taskSchema = new Schema(
     project: {
       type: Schema.Types.ObjectId,
       ref: "Project",
-      required: true,
     },
 
     assignedTo: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
 
     assignedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
 
     status: {

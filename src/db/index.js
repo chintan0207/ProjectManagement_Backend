@@ -2,7 +2,6 @@
 import mongoose from "mongoose";
 import { DB_NAME, GlobalRoleEnum } from "../utils/constant.js";
 import logger from "../utils/logger.js";
-import bcrypt from "bcryptjs";
 import { User } from "../models/user.model.js"; // adjust path if needed
 
 const connectDB = async () => {
@@ -16,13 +15,11 @@ const connectDB = async () => {
     });
 
     if (!existingSuperAdmin) {
-      const hashedPassword = await bcrypt.hash("admin123", 10); // Default password
-
       await User.create({
         username: "superadmin",
         fullname: "Super Admin",
         email: "superadmin@pms.com",
-        password: hashedPassword,
+        password: "admin123",
         globalRole: GlobalRoleEnum.SUPER_ADMIN,
         isEmailVerified: true,
         avatar: {

@@ -11,7 +11,7 @@ import {
   removeProjectMember,
   getProjectsByOrganizationId,
   getDeletedProjects,
-  getAllProjects,
+  getAccessibleProjects,
 } from "../controllers/project.controller.js";
 
 import { verifyJwt } from "../middlewares/auth.middleware.js";
@@ -42,7 +42,7 @@ router
     validate(createProjectSchema),
     createProject,
   )
-  .get(validateGlobalPermission(AvailableGlobalRoles), getAllProjects);
+  .get(validateGlobalPermission(AvailableGlobalRoles), getAccessibleProjects);
 router
   .route("/:projectId")
   .get(validateProjectPermission(AvailableProjectRoles), getProjectById)
