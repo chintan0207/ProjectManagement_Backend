@@ -43,7 +43,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/organizations", organizationRouter);
 app.use("/api/v1/project", projectRouter);
 app.use("/api/v1/task", taskRouter);
-app.use("/api/v1/subtasks", subTaskRouter);
+app.use("/api/v1/subtask", subTaskRouter);
 app.use("/api/v1/notes", noteRouter);
 app.use("/api/v1/kanban", kanbanRouter);
 app.use("/api/v1/chat", chatRouter);
