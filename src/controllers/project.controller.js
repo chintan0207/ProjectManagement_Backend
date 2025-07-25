@@ -281,8 +281,6 @@ export const getAccessibleProjects = asyncHandler(async (req, res) => {
 
 export const getAllProjects = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  console.log("req.user", req.user);
-  console.log(" req.user.orgId", req.user.userId);
   const globalRole = req.user.globalRole;
   const orgRole = req.user?.orgRole;
   const orgId = req.user?.orgId;

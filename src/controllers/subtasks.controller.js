@@ -36,22 +36,18 @@ export const createSubTask = asyncHandler(async (req, res) => {
 
 export const getSubTasksByTaskId = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
-  let {
-    page = 1,
-    limit = 10,
-    sortOrder = "desc",
-    sortField = "createdAt",
-    search = "",
-  } = req.query;
+
+  let { page, limit, sortOrder = "desc", sortField = "createdAt", search = "" } = req.query;
 
   if (!mongoose.Types.ObjectId.isValid(taskId)) {
     throw new ApiError(400, "Invalid task ID");
   }
 
-  const pageNumber = parseInt(page);
-  const limitNumber = parseInt(limit);
-  const skip = (pageNumber - 1) * limitNumber;
   const sortDirection = sortOrder === "asc" ? 1 : -1;
+  const usePagination = page !== undefined && limit !== undefined;
+  const pageNumber = usePagination ? parseInt(page) : 1;
+  const limitNumber = usePagination ? parseInt(limit) : 0;
+  const skip = (pageNumber - 1) * limitNumber;
 
   const matchStage = {
     taskId: new mongoose.Types.ObjectId(taskId),
@@ -101,17 +97,18 @@ export const getSubTasksByTaskId = asyncHandler(async (req, res) => {
               page: pageNumber,
               limit: limitNumber,
               totalPages: {
-                $ceil: { $divide: ["$total", limitNumber] },
+                $ceil: { $divide: ["$total", limitNumber || 1] },
               },
             },
           },
         ],
-        data: [{ $skip: skip }, { $limit: limitNumber }],
+        data: usePagination ? [{ $skip: skip }, { $limit: limitNumber }] : [],
       },
     },
   ];
 
   const result = await SubTask.aggregate(pipeline);
+
   const { metaData = [], data = [] } = result[0] || {};
   const paginationData = metaData[0] || {
     total: 0,

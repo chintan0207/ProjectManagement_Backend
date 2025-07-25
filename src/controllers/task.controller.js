@@ -48,22 +48,18 @@ export const createTask = asyncHandler(async (req, res) => {
 
 export const getTasksByProject = asyncHandler(async (req, res) => {
   const { projectId } = req.params;
-  let {
-    page = 1,
-    limit = 10,
-    sortOrder = "desc",
-    sortField = "createdAt",
-    search = "",
-  } = req.query;
+
+  let { page, limit, sortOrder = "desc", sortField = "createdAt", search = "" } = req.query;
 
   if (!mongoose.Types.ObjectId.isValid(projectId)) {
     throw new ApiError(400, "Invalid project ID");
   }
 
-  const pageNumber = parseInt(page);
-  const limitNumber = parseInt(limit);
-  const skip = (pageNumber - 1) * limitNumber;
   const sortDirection = sortOrder === "asc" ? 1 : -1;
+  const usePagination = page !== undefined && limit !== undefined;
+  const pageNumber = usePagination ? parseInt(page) : 1;
+  const limitNumber = usePagination ? parseInt(limit) : 0;
+  const skip = (pageNumber - 1) * limitNumber;
 
   const matchStage = {
     project: new mongoose.Types.ObjectId(projectId),
@@ -117,12 +113,12 @@ export const getTasksByProject = asyncHandler(async (req, res) => {
               page: pageNumber,
               limit: limitNumber,
               totalPages: {
-                $ceil: { $divide: ["$total", limitNumber] },
+                $ceil: { $divide: ["$total", limitNumber || 1] },
               },
             },
           },
         ],
-        data: [{ $skip: skip }, { $limit: limitNumber }],
+        data: usePagination ? [{ $skip: skip }, { $limit: limitNumber }] : [],
       },
     },
   ];
